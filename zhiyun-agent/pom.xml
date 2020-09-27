@@ -43,6 +43,7 @@
                 <configuration>
                     <artifactSet>
                         <includes>
+                            <include>com.antzuhl.zhiyun:zhiyun-core</include>
                             <include>javassist:javassist:jar:</include>
                         </includes>
                     </artifactSet>

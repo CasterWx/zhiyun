@@ -19,6 +19,7 @@
         <module>zhiyun-core</module>
         <module>zhiyun-admin</module>
         <module>zhiyun-agent</module>
+        <module>zhiyun-demo</module>
     </modules>
 
     <dependencies>

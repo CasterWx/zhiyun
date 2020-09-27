@@ -12,4 +12,6 @@ public class Constants {
     /** zookeeper timeout */
     public static final int ZOOKEEPER_TIMEOUT = 3000;
 
+    /** zookeeper base path */
+    public static final String ZOOKEEPER_BASE_PATH = "/zhiyun";
 }

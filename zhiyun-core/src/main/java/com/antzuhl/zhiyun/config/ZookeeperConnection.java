@@ -25,7 +25,7 @@ public class ZookeeperConnection {
     private ZookeeperConnection() {}
 
     public static ZooKeeper getInstance() {
-        while (zooKeeper == null) {
+        if (zooKeeper == null) {
             zkClient();
         }
         return zooKeeper;

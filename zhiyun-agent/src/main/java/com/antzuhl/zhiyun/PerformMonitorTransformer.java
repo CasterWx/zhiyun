@@ -1,5 +1,6 @@
 package com.antzuhl.zhiyun;
 
+import com.antzuhl.zhiyun.common.Constants;
 import com.antzuhl.zhiyun.config.ZookeeperConnection;
 import com.antzuhl.zhiyun.service.ZookeeperService;
 import javassist.CannotCompileException;
@@ -21,7 +22,7 @@ import java.security.ProtectionDomain;
 @Slf4j
 public class PerformMonitorTransformer implements ClassFileTransformer {
 
-    private static final String PACKAGE_PREFIX = "instrument";
+    private static final String PACKAGE_PREFIX = "com.antzuhl.zhiyun    ";
 
     @Override
     public byte[] transform(ClassLoader loader,
@@ -36,12 +37,19 @@ public class PerformMonitorTransformer implements ClassFileTransformer {
             }
             String currentClassName = className.replaceAll("/", ".");
 
+            if (!currentClassName.startsWith(PACKAGE_PREFIX)) {
+                return null;
+            }
+
             CtClass ctClass = ClassPool.getDefault().get(currentClassName);
             CtBehavior[] methods = ctClass.getDeclaredBehaviors();
+            // init base path
+            ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH, "");
+
             for (CtBehavior method : methods) {
                 // registry method
-                ZookeeperService.createNode("/zhiyun", null);
-
+                ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH
+                        + "/" + method.getName(), "");
                 System.out.println("method trans:"+method.getName() + ", class:"+className);
             }
             return ctClass.toBytecode();
