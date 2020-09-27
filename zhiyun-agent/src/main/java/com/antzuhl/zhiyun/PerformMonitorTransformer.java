@@ -1,14 +1,10 @@
 package com.antzuhl.zhiyun;
 
 import com.antzuhl.zhiyun.common.Constants;
-import com.antzuhl.zhiyun.config.ZookeeperConnection;
 import com.antzuhl.zhiyun.service.ZookeeperService;
-import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
-import javassist.expr.ExprEditor;
-import javassist.expr.MethodCall;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.instrument.ClassFileTransformer;
@@ -22,7 +18,7 @@ import java.security.ProtectionDomain;
 @Slf4j
 public class PerformMonitorTransformer implements ClassFileTransformer {
 
-    private static final String PACKAGE_PREFIX = "com.antzuhl.zhiyun    ";
+    private static final String PACKAGE_PREFIX = "com.antzuhl.zhiyun";
 
     @Override
     public byte[] transform(ClassLoader loader,
@@ -44,13 +40,28 @@ public class PerformMonitorTransformer implements ClassFileTransformer {
             CtClass ctClass = ClassPool.getDefault().get(currentClassName);
             CtBehavior[] methods = ctClass.getDeclaredBehaviors();
             // init base path
-            ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH, "");
+            if (ZookeeperService.exists(Constants.ZOOKEEPER_BASE_PATH, false) == null) {
+                log.info("Zookeeper base path is null. now create {}", Constants.ZOOKEEPER_BASE_PATH);
+                ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH, "");
+            }
 
             for (CtBehavior method : methods) {
-                // registry method
+                /**
+                 * registry method info
+                 * template:
+                 *      dubbo://10.155.10.154:20063
+                 *             /com.kooup.k12.message.service.IMessagePoolService
+                 *                  ?anyhost=true
+                 *                  &application=kooup-dubbo-project-biz
+                 *                  &methods=queryNeedSendMessage,updateStatusByKey,insert,updateStatusByIds
+                 *                  &side=provider&threads=1200
+                 *                  &timestamp=1601192935507
+                 *                  &timestampFormat=2020-09-27_15-48-55.507
+                 * */
+                System.out.println("source file:" + ctClass.getClassFile().getSourceFile());
                 ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH
-                        + "/" + method.getName(), "");
-                System.out.println("method trans:"+method.getName() + ", class:"+className);
+                        + "/" + currentClassName + "&" + method.getName(), ctClass.getClassFile().getSourceFile());
+//                System.out.println("method trans:" + method.getName() + ", class:"+className);
             }
             return ctClass.toBytecode();
         } catch (Exception e) {

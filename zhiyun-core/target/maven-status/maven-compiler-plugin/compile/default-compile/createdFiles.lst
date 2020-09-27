@@ -1,7 +1,7 @@
-com\antzuhl\zhiyun\config\ZookeeperConnection$1.class
-com\antzuhl\zhiyun\common\Constants.class
-com\antzuhl\zhiyun\common\Response.class
-com\antzuhl\zhiyun\common\CustomExceptionEnum.class
-com\antzuhl\zhiyun\annotation\AllowRewrite.class
-com\antzuhl\zhiyun\config\ZookeeperConnection.class
-com\antzuhl\zhiyun\service\ZookeeperService.class
+com/antzuhl/zhiyun/config/ZookeeperConnection$1.class
+com/antzuhl/zhiyun/common/CustomExceptionEnum.class
+com/antzuhl/zhiyun/annotation/AllowRewrite.class
+com/antzuhl/zhiyun/config/ZookeeperConnection.class
+com/antzuhl/zhiyun/common/Constants.class
+com/antzuhl/zhiyun/service/ZookeeperService.class
+com/antzuhl/zhiyun/common/Response.class
