@@ -2,13 +2,17 @@ package com.antzuhl.zhiyun;
 
 import com.antzuhl.zhiyun.common.Constants;
 import com.antzuhl.zhiyun.service.ZookeeperService;
-import javassist.ClassPool;
-import javassist.CtBehavior;
-import javassist.CtClass;
+import javassist.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.Calendar;
 
 /**
  * registry class info
@@ -18,7 +22,7 @@ import java.security.ProtectionDomain;
 @Slf4j
 public class PerformMonitorTransformer implements ClassFileTransformer {
 
-    private static final String PACKAGE_PREFIX = "com.antzuhl.zhiyun";
+    private static final java.lang.String PACKAGE_PREFIX = "com.antzuhl.zhiyun";
 
     @Override
     public byte[] transform(ClassLoader loader,
@@ -27,8 +31,16 @@ public class PerformMonitorTransformer implements ClassFileTransformer {
                             ProtectionDomain protectionDomain,
                             byte[] classfileBuffer) {
         try {
+            log.info("=================================transform start=======================================");
+            log.info("className: {}", className);
+            // TODO 需要判断是初次加载还是从zk中重载的class
+            /**
+             * HOW TO CHECK
+             * 在加载时判断被修改路径是否存在该class，如果存在就去加载该class，如果不存在就正常执行
+             * */
             if (className == null) {
                 log.info("PerformMonitorTransformer transform className is null.");
+                log.info("className is null, other info: {}", classBeingRedefined);
                 return null;
             }
             String currentClassName = className.replaceAll("/", ".");
@@ -37,32 +49,45 @@ public class PerformMonitorTransformer implements ClassFileTransformer {
                 return null;
             }
 
+
             CtClass ctClass = ClassPool.getDefault().get(currentClassName);
             CtBehavior[] methods = ctClass.getDeclaredBehaviors();
+            // 存在change, data为修改后的class路径
+            if (ZookeeperService.exists(Constants.ZOOKEEPER_CACHE_PATH + currentClassName, false) != null) {
+                // i need transform use zk data
+                log.info("getDeclaredMethod");
+                CtMethod cm = ClassPool.getDefault().get(currentClassName).getDeclaredMethod("print");
+                // 修改方法代码体
+                cm.setBody("{ System.out.println(\"nohelo---\"); }");
+                // delete zk info
+                ZookeeperService.deleteNode(Constants.ZOOKEEPER_CACHE_PATH + currentClassName);
+                return ctClass.toBytecode();
+            }
             // init base path
             if (ZookeeperService.exists(Constants.ZOOKEEPER_BASE_PATH, false) == null) {
                 log.info("Zookeeper base path is null. now create {}", Constants.ZOOKEEPER_BASE_PATH);
-                ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH, "");
+                ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH, "", false);
+            }
+            byte []classCode = ctClass.toBytecode();
+
+            log.info("ctClass: {}", ctClass);
+            for (CtBehavior method : methods) {
+                ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH
+                        + "/" + currentClassName + "?version=" + System.getProperty("zhiyun.version")
+                        + "&method=" + method.getName()
+                        + "&timestampFormat=" + Calendar.getInstance().getTime().getTime(),
+                        new String(classCode), false);
+//                  System.out.println("method trans:" + method.getName() + ", class:"+className);
+            }
+            File file = new File(System.getProperty("user.home") + "\\.zhiyun\\");
+            if (!file.exists()) {
+                file.mkdir();
             }
 
-            for (CtBehavior method : methods) {
-                /**
-                 * registry method info
-                 * template:
-                 *      dubbo://10.155.10.154:20063
-                 *             /com.kooup.k12.message.service.IMessagePoolService
-                 *                  ?anyhost=true
-                 *                  &application=kooup-dubbo-project-biz
-                 *                  &methods=queryNeedSendMessage,updateStatusByKey,insert,updateStatusByIds
-                 *                  &side=provider&threads=1200
-                 *                  &timestamp=1601192935507
-                 *                  &timestampFormat=2020-09-27_15-48-55.507
-                 * */
-                System.out.println("source file:" + ctClass.getClassFile().getSourceFile());
-                ZookeeperService.createNode(Constants.ZOOKEEPER_BASE_PATH
-                        + "/" + currentClassName + "&" + method.getName(), ctClass.getClassFile().getSourceFile());
-//                System.out.println("method trans:" + method.getName() + ", class:"+className);
-            }
+            FileOutputStream output = new FileOutputStream(System.getProperty("user.home") + "\\.zhiyun\\" + currentClassName + ".class");
+            output.write(classCode);
+            output.close();
+            System.out.println("文件" + currentClassName + "写入成功!!!");
             return ctClass.toBytecode();
         } catch (Exception e) {
             log.error("PerformMonitorTransformer transform error: {}", e.getMessage());

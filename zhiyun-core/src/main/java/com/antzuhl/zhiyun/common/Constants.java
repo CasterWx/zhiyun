@@ -14,4 +14,8 @@ public class Constants {
 
     /** zookeeper base path */
     public static final String ZOOKEEPER_BASE_PATH = "/zhiyun";
+
+    /** zookeeper cache path */
+    public static final String ZOOKEEPER_CACHE_PATH = "/zhiyun/change/";
+    public static final String ZOOKEEPER_CACHE_PATH_EXIST = "/zhiyun/change";
 }

@@ -6,24 +6,16 @@ package com.antzuhl.zhiyun;
  */
 public class Main {
 
-    public static void hello() {
-        System.out.println("hello");
-    }
-
     public static void main(String[] args) {
         System.out.println("ins main run...");
-        hello();
-        hello();
-        hello();
-        hello();
-        hello();
+        Print print = new Print();
         while(true) {
+            print.print();
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            hello();
         }
     }
 }

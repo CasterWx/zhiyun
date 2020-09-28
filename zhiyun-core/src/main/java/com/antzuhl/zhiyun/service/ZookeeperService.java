@@ -55,7 +55,6 @@ public class ZookeeperService {
 
     /**
      * 创建持久化节点
-     *
      * @param path
      * @param data
      */
@@ -69,6 +68,20 @@ public class ZookeeperService {
         }
     }
 
+    /**
+     * 创建临时节点
+     * @param path
+     * @param data
+     */
+    public static boolean createNode(String path, String data, boolean mode) {
+        try {
+            ZookeeperConnection.getInstance().create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            return true;
+        } catch (Exception e) {
+            logger.error("【创建临时节点异常】{},{},{}", path, data, e);
+            return false;
+        }
+    }
 
     /**
      * 修改持久化节点
